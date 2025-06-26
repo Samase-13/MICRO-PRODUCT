@@ -5,7 +5,7 @@ services:
     container_name: mi-nueva-app # Debe coincidir con APP_CONTAINER_NAME en el workflow
     build:
       # Contexto: la raíz del proyecto (donde se ejecuta el comando docker-compose)
-      context: .
+      context: ..
       # Dockerfile: la ruta al Dockerfile desde la raíz del proyecto
       dockerfile: docker/Dockerfile
     ports:
