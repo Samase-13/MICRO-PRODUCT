@@ -2,29 +2,19 @@
 
 version: '3.8'
 
+# version: '3.8' # Puedes borrar esta línea, es obsoleta
+
 services:
-  # El único servicio es tu aplicación
   app:
-    # La configuración de construcción sigue siendo la misma.
-    # Docker buscará el Dockerfile en la carpeta 'docker/'
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    
-    # Un nombre de contenedor para identificarlo fácilmente
     container_name: mi-nueva-app
-    
-    # Mapea el puerto de tu máquina al puerto del contenedor
+    build:
+      # ⬇️⬇️⬇️ AQUÍ ESTÁ LA CLAVE ⬇️⬇️⬇️
+      # Contexto: Es el directorio padre (la raíz del proyecto)
+      context: ..
+      # Dockerfile: Se encuentra en el directorio actual (docker/) relativo al contexto
+      dockerfile: docker/Dockerfile
     ports:
       - '8084:8084'
-      
-    # Variables de entorno para tu aplicación (si las necesita)
-    # Se han eliminado las variables de la base de datos.
-    # Puedes añadir las que tu nueva app requiera.
-    # environment:
-    #   - VARIABLE_EJEMPLO=valor
-
-    # Reinicia el contenedor automáticamente a menos que lo detengas manualmente
     restart: unless-stopped
     
     # Se ha eliminado 'depends_on' porque ya no hay base de datos.
