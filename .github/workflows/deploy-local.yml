@@ -26,29 +26,25 @@ jobs:
     steps:
       # ... (pasos de checkout, setup-java y build sin cambios) ...
 
-      # 4. Desplegar la aplicación usando Docker Compose (CORREGIDO)
+      # 4. Desplegar la aplicación usando Docker Compose
       - name: Deploy with Docker Compose
         run: |
           echo "✅ Iniciando despliegue en el runner..."
           
-          # ⬇️⬇️⬇️ LÍNEA AÑADIDA ⬇️⬇️⬇️
-          # Navegamos al directorio donde está el docker-compose.yml
-          cd docker
+          # ❌ NO usamos 'cd docker'. Nos quedamos en la raíz del proyecto.
           
-          # 1️⃣ Limpiamos cualquier despliegue anterior del mismo proyecto
           echo "🧹 Limpiando despliegue anterior (si existe)..."
-          docker compose -p ${{ env.DOCKER_PROJECT_NAME }} down --remove-orphans || echo "⚠️ No se encontró un despliegue anterior. Continuando..."
+          # Usamos el flag '-f' para decirle a docker-compose dónde está su archivo.
+          docker compose -f docker/docker-compose.yml -p ${{ env.DOCKER_PROJECT_NAME }} down --remove-orphans || echo "⚠️ No se encontró un despliegue anterior. Continuando..."
 
-          # 2️⃣ Construimos la nueva imagen de la app y levantamos el servicio
           echo "🏗️ Construyendo y levantando el servicio de la aplicación..."
-          docker compose -p ${{ env.DOCKER_PROJECT_NAME }} up -d --build
+          # Hacemos lo mismo para el comando 'up'
+          docker compose -f docker/docker-compose.yml -p ${{ env.DOCKER_PROJECT_NAME }} up -d --build
 
-          # 3️⃣ Verificamos el estado final del contenedor
           echo "🔍 Verificando estado del contenedor..."
-          docker compose -p ${{ env.DOCKER_PROJECT_NAME }} ps
+          docker compose -f docker/docker-compose.yml -p ${{ env.DOCKER_PROJECT_NAME }} ps
           
           echo "🗒️ Mostrando los últimos logs de la aplicación:"
-          # Ajuste: docker logs usa el nombre del contenedor, no el del proyecto
           docker logs --tail 100 ${{ env.APP_CONTAINER_NAME }}
           
           echo "🎉 ✓ Despliegue completado exitosamente."
