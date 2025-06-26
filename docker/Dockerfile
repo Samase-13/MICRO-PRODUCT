@@ -23,7 +23,7 @@ USER appuser
 # (Opcional) Health check para saber si la aplicación está saludable.
 # Funciona genial si tu app es Spring Boot con Actuator. Si no, puedes quitarlo.
 HEALTHCHECK --interval=30s --timeout=3s \
-  CMD curl -f http://localhost:8084/actuator/health || exit 1
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # El comando para iniciar la aplicación cuando se levante el contenedor.
 ENTRYPOINT ["java", "-jar", "app.jar"]
