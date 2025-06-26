@@ -9,5 +9,5 @@ services:
       # Dockerfile: la ruta al Dockerfile desde la raíz del proyecto
       dockerfile: docker/Dockerfile
     ports:
-      - '8084:8084'
+      - '8084:8080'
     restart: unless-stopped
