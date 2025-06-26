@@ -14,7 +14,7 @@ EXPOSE 8084
 # Copia el archivo JAR compilado de tu proyecto.
 # El comodín '*' permite que funcione sin importar la versión exacta del JAR.
 # Asegúrate de que tu proyecto genere el JAR en la carpeta 'target/'.
-COPY target/mi-nueva-app-*.jar app.jar
+COPY target/*.jar app.jar
 
 # Crea un usuario no-root por seguridad, para que la app no se ejecute como administrador.
 RUN useradd -m appuser && chown -R appuser:appuser $APP_HOME
