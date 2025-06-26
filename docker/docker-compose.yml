@@ -1,16 +1,35 @@
+# docker-compose.yml para una aplicación Java sin base de datos
+
 version: '3.8'
 
 services:
-  micro_product:
-    container_name: product_app_2025
-    image: micro/product:1.0.0
+  # El único servicio es tu aplicación
+  app:
+    # La configuración de construcción sigue siendo la misma.
+    # Docker buscará el Dockerfile en la carpeta 'docker/'
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    
+    # Un nombre de contenedor para identificarlo fácilmente
+    container_name: mi-nueva-app
+    
+    # Mapea el puerto de tu máquina al puerto del contenedor
     ports:
-      - "8086:8080"
-    networks:
-      - backend
-networks:
-  backend:
-    name: micro_product_net
+      - '8084:8084'
+      
+    # Variables de entorno para tu aplicación (si las necesita)
+    # Se han eliminado las variables de la base de datos.
+    # Puedes añadir las que tu nueva app requiera.
+    # environment:
+    #   - VARIABLE_EJEMPLO=valor
+
+    # Reinicia el contenedor automáticamente a menos que lo detengas manualmente
+    restart: unless-stopped
+    
+    # Se ha eliminado 'depends_on' porque ya no hay base de datos.
+    # Se ha eliminado la definición de red explícita, ya que con un solo servicio
+    # Docker Compose manejará la red por defecto sin problemas.
+
+# La sección 'volumes' se ha eliminado porque ya no hay base de datos que necesite persistencia.
+# La sección 'networks' se ha eliminado por simplicidad.
