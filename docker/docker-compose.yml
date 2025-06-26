@@ -1,25 +1,13 @@
-# docker-compose.yml para una aplicación Java sin base de datos
-
-version: '3.8'
-
-# version: '3.8' # Puedes borrar esta línea, es obsoleta
+# version: '3.8' # Esta línea es opcional y puede ser eliminada.
 
 services:
   app:
-    container_name: mi-nueva-app
+    container_name: mi-nueva-app # Debe coincidir con APP_CONTAINER_NAME en el workflow
     build:
-      # ⬇️⬇️⬇️ AQUÍ ESTÁ LA CLAVE ⬇️⬇️⬇️
-      # Contexto: Es el directorio padre (la raíz del proyecto)
-      context: ..
-      # Dockerfile: Se encuentra en el directorio actual (docker/) relativo al contexto
+      # Contexto: la raíz del proyecto (donde se ejecuta el comando docker-compose)
+      context: .
+      # Dockerfile: la ruta al Dockerfile desde la raíz del proyecto
       dockerfile: docker/Dockerfile
     ports:
       - '8084:8084'
     restart: unless-stopped
-    
-    # Se ha eliminado 'depends_on' porque ya no hay base de datos.
-    # Se ha eliminado la definición de red explícita, ya que con un solo servicio
-    # Docker Compose manejará la red por defecto sin problemas.
-
-# La sección 'volumes' se ha eliminado porque ya no hay base de datos que necesite persistencia.
-# La sección 'networks' se ha eliminado por simplicidad.

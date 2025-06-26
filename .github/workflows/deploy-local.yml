@@ -1,49 +1,61 @@
 # .github/workflows/deploy-local.yml
-# 🚀 Pipeline de CI/CD para despliegue en un Self-Hosted Runner (Aplicación sin base de datos)
+# 🚀 Pipeline de CI/CD para despliegue en Self-Hosted Runner (App sin Base de Datos)
 
-name: Deploy Locally (No DB)
+name: Deploy App Locally (No DB)
 
 on:
-  # Se ejecuta en cada push a la rama 'main'
   push:
     branches: [ "main" ]
-  # Permite ejecutar el pipeline manualmente desde la pestaña Actions de GitHub
-  workflow_dispatch:
+  workflow_dispatch: # Permite ejecutar el pipeline manualmente
 
-# Variables de entorno para que docker-compose las use
-# Se han simplificado, eliminando las de la base de datos
+# Variables de entorno simplificadas para este proyecto
 env:
-  DOCKER_PROJECT_NAME: 'mi-nueva-app-project' # Nombre del proyecto en Docker Compose para aislarlo
-  APP_CONTAINER_NAME: 'mi-nueva-app'          # Nombre del contenedor de la aplicación
-
-# ... (resto del archivo sin cambios) ...
+  DOCKER_PROJECT_NAME: 'mi-nueva-app-project'
+  APP_CONTAINER_NAME: 'mi-nueva-app'
+  COMPOSE_FILE_PATH: 'docker/docker-compose.yml' # Ruta al archivo compose
 
 jobs:
   build-and-deploy:
-    name: Build and Deploy
+    name: Build and Deploy App
     runs-on: self-hosted
 
     steps:
-      # ... (pasos de checkout, setup-java y build sin cambios) ...
+      # 1️⃣ Descargar el código del repositorio en el runner
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
 
-      # 4. Desplegar la aplicación usando Docker Compose
-      - name: Deploy with Docker Compose
+      # 2️⃣ Configurar el entorno de Java y Maven en el runner
+      - name: 2. Set up JDK 17 & Maven
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      # 3️⃣ Construir el proyecto y crear el .jar
+      - name: 3. Build Project with Maven
+        run: mvn -B clean package -DskipTests
+
+      # 4️⃣ Desplegar la aplicación usando Docker Compose
+      - name: 4. Deploy with Docker Compose
         run: |
           echo "✅ Iniciando despliegue en el runner..."
           
-          # ❌ NO usamos 'cd docker'. Nos quedamos en la raíz del proyecto.
+          # Se ejecutan los comandos desde la raíz del proyecto para un contexto correcto.
           
+          # Paso A: Limpiar cualquier despliegue anterior
           echo "🧹 Limpiando despliegue anterior (si existe)..."
-          # Usamos el flag '-f' para decirle a docker-compose dónde está su archivo.
-          docker compose -f docker/docker-compose.yml -p ${{ env.DOCKER_PROJECT_NAME }} down --remove-orphans || echo "⚠️ No se encontró un despliegue anterior. Continuando..."
+          docker-compose -f ${{ env.COMPOSE_FILE_PATH }} -p ${{ env.DOCKER_PROJECT_NAME }} down --remove-orphans || echo "⚠️ No se encontró un despliegue anterior para limpiar."
 
+          # Paso B: Construir la nueva imagen de la app y levantar el servicio
           echo "🏗️ Construyendo y levantando el servicio de la aplicación..."
-          # Hacemos lo mismo para el comando 'up'
-          docker compose -f docker/docker-compose.yml -p ${{ env.DOCKER_PROJECT_NAME }} up -d --build
+          docker-compose -f ${{ env.COMPOSE_FILE_PATH }} -p ${{ env.DOCKER_PROJECT_NAME }} up -d --build
 
+          # Paso C: Verificar el estado final del contenedor
           echo "🔍 Verificando estado del contenedor..."
-          docker compose -f docker/docker-compose.yml -p ${{ env.DOCKER_PROJECT_NAME }} ps
+          docker-compose -f ${{ env.COMPOSE_FILE_PATH }} -p ${{ env.DOCKER_PROJECT_NAME }} ps
           
+          # Paso D: Mostrar los últimos logs de la aplicación
           echo "🗒️ Mostrando los últimos logs de la aplicación:"
           docker logs --tail 100 ${{ env.APP_CONTAINER_NAME }}
           
