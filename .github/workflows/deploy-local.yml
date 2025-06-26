@@ -1,62 +1,57 @@
-# .github/workflows/deploy-local.yml
-# 🚀 Pipeline de CI/CD para despliegue en Self-Hosted Runner (App sin Base de Datos)
-
-name: Deploy App Locally (No DB)
+name: 🚀 CI/CD con SonarQube y Docker
 
 on:
   push:
-    branches: [ "main" ]
-  workflow_dispatch: # Permite ejecutar el pipeline manualmente
-
-# Variables de entorno simplificadas para este proyecto
-env:
-  DOCKER_PROJECT_NAME: 'mi-nueva-app-project'
-  APP_CONTAINER_NAME: 'mi-nueva-app'
-  COMPOSE_FILE_PATH: 'docker/docker-compose.yml' # Ruta al archivo compose
+    branches:
+      - main
 
 jobs:
-  build-and-deploy:
-    name: Build and Deploy App
+  build-analyze-deploy:
+    name: 🔁 Build + Análisis + Despliegue
     runs-on: self-hosted
 
     steps:
-      # 1️⃣ Descargar el código del repositorio en el runner
-      - name: 1. Checkout Repository
-        uses: actions/checkout@v4
+      - name: 📥 Paso 1 - Clonar repositorio
+        uses: actions/checkout@v3
 
-      # 2️⃣ Configurar el entorno de Java y Maven en el runner
-      - name: 2. Set up JDK 17 & Maven
-        uses: actions/setup-java@v4
+      - name: ☕ Paso 2 - Instalar Java y Maven
+        uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
 
-      # 3️⃣ Construir el proyecto y crear el .jar
-      - name: 3. Build Project with Maven
-        run: mvn -B clean package -DskipTests
-
-      # 4️⃣ Desplegar la aplicación usando Docker Compose
-      - name: 4. Deploy with Docker Compose
+      - name: 🧪 Paso 3 - Compilar con Maven
         run: |
-          echo "✅ Iniciando despliegue en el runner..."
-          
-          # Se ejecutan los comandos desde la raíz del proyecto para un contexto correcto.
-          
-          # Paso A: Limpiar cualquier despliegue anterior
-          echo "🧹 Limpiando despliegue anterior (si existe)..."
-          docker-compose -f ${{ env.COMPOSE_FILE_PATH }} -p ${{ env.DOCKER_PROJECT_NAME }} down --remove-orphans || echo "⚠️ No se encontró un despliegue anterior para limpiar."
+          echo "📦 Compilando proyecto..."
+          mvn clean package -DskipTests
+          echo "✅ Build completado."
 
-          # Paso B: Construir la nueva imagen de la app y levantar el servicio
-          echo "🏗️ Construyendo y levantando el servicio de la aplicación..."
-          docker-compose -f ${{ env.COMPOSE_FILE_PATH }} -p ${{ env.DOCKER_PROJECT_NAME }} up -d --build
+      - name: 📊 Paso 4 - Análisis con SonarQube
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          echo "🔍 Ejecutando análisis SonarQube..."
+          mvn sonar:sonar \
+            -Dsonar.projectKey=lpapp \
+            -Dsonar.projectName=lpapp \
+            -Dsonar.host.url=http://localhost:9000 \
+            -Dsonar.login=$SONAR_TOKEN
+          echo "✅ Análisis completado."
 
-          # Paso C: Verificar el estado final del contenedor
-          echo "🔍 Verificando estado del contenedor..."
-          docker-compose -f ${{ env.COMPOSE_FILE_PATH }} -p ${{ env.DOCKER_PROJECT_NAME }} ps
-          
-          # Paso D: Mostrar los últimos logs de la aplicación
-          echo "🗒️ Mostrando los últimos logs de la aplicación:"
-          docker logs --tail 100 ${{ env.APP_CONTAINER_NAME }}
-          
-          echo "🎉 ✓ Despliegue completado exitosamente."
+      - name: 🐳 Paso 5 - Desplegar con Docker Compose
+        run: |
+          echo "🧹 Apagando contenedores anteriores si existen..."
+          docker compose -f docker/docker-compose.yml down -v --remove-orphans || echo "⚠ No se pudo bajar contenedores"
+
+          echo "🚀 Iniciando nuevo despliegue..."
+          docker compose -f docker/docker-compose.yml up -d --build || echo "❌ Error en docker-compose up"
+
+          echo "⏳ Esperando 10 segundos..."
+          sleep 10
+
+          echo "📋 Contenedores activos:"
+          docker ps
+
+          echo "📝 Logs recientes del contenedor product_app_2025:"
+          docker logs --tail=50 product_app_2025 || echo "⚠ No se pudo obtener logs"
