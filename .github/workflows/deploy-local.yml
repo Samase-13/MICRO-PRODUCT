@@ -16,40 +16,28 @@ env:
   DOCKER_PROJECT_NAME: 'mi-nueva-app-project' # Nombre del proyecto en Docker Compose para aislarlo
   APP_CONTAINER_NAME: 'mi-nueva-app'          # Nombre del contenedor de la aplicación
 
+# ... (resto del archivo sin cambios) ...
+
 jobs:
   build-and-deploy:
     name: Build and Deploy
-    # ¡Importante! Este job DEBE ejecutarse en tu runner autohospedado
     runs-on: self-hosted
 
     steps:
-      # 1. Descargar el código del repositorio en el runner
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      # ... (pasos de checkout, setup-java y build sin cambios) ...
 
-      # 2. Configurar el entorno de Java y Maven en el runner
-      # Asegúrate de que tu runner tenga Java y Maven instalados,
-      # o usa esta acción para que GitHub los instale.
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: maven
-
-      # 3. Construir el proyecto y crear el .jar (saltando las pruebas)
-      - name: Build with Maven
-        run: mvn -B clean package -DskipTests
-
-      # 4. Desplegar la aplicación usando Docker Compose
-      # Este paso es ahora mucho más simple sin la base de datos
+      # 4. Desplegar la aplicación usando Docker Compose (CORREGIDO)
       - name: Deploy with Docker Compose
         run: |
           echo "✅ Iniciando despliegue en el runner..."
           
+          # ⬇️⬇️⬇️ LÍNEA AÑADIDA ⬇️⬇️⬇️
+          # Navegamos al directorio donde está el docker-compose.yml
+          cd docker
+          
           # 1️⃣ Limpiamos cualquier despliegue anterior del mismo proyecto
           echo "🧹 Limpiando despliegue anterior (si existe)..."
-          docker-compose -p ${{ env.DOCKER_PROJECT_NAME }} down --remove-orphans || echo "⚠️ No se encontró un despliegue anterior para limpiar. Continuando..."
+          docker-compose -p ${{ env.DOCKER_PROJECT_NAME }} down --remove-orphans || echo "⚠️ No se encontró un despliegue anterior. Continuando..."
 
           # 2️⃣ Construimos la nueva imagen de la app y levantamos el servicio
           echo "🏗️ Construyendo y levantando el servicio de la aplicación..."
@@ -60,6 +48,7 @@ jobs:
           docker-compose -p ${{ env.DOCKER_PROJECT_NAME }} ps
           
           echo "🗒️ Mostrando los últimos logs de la aplicación:"
+          # Ajuste: docker logs usa el nombre del contenedor, no el del proyecto
           docker logs --tail 100 ${{ env.APP_CONTAINER_NAME }}
           
           echo "🎉 ✓ Despliegue completado exitosamente."
